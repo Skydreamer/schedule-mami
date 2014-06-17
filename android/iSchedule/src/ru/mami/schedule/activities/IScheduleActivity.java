@@ -12,19 +12,21 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 
 import ru.mami.schedule.R;
 import ru.mami.schedule.adapters.UserAdapter;
 import ru.mami.schedule.utils.RequestStringsCreater;
 import ru.mami.schedule.utils.StringConstants;
-import ru.mami.schedule.utils.UpdateManager;
 import ru.mami.schedule.utils.XMLParser;
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -37,12 +39,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 public class IScheduleActivity extends Activity implements OnClickListener {
     private SharedPreferences sharedPreferences;
+    private InputMethodManager inputMethodManager;
     private EditText loginEditText;
     private EditText passEditText;
     private Button loginButton;
@@ -52,17 +56,18 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         super.onCreate(savedInstanceState);
         Log.i(getClass().getSimpleName(), "IScheduleActivity created");
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
+        inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        
         Log.i(getClass().getSimpleName(), "DefaultSharedPreference: " + sharedPreferences.getAll().toString());
 
         if (sharedPreferences.getString(StringConstants.TOKEN, null) == null) {
             setContentView(R.layout.auth_layout);
         } else {
-            Log.i("User", "Load user info from preferences");
+            Log.i(getClass().getSimpleName(), "Load user info from preferences");
             startMainTabActivity();
         }
     }
-
+    
     @Override
     protected void onStart() {
         this.loginEditText = (EditText) findViewById(R.id.loginEText);
@@ -74,22 +79,24 @@ public class IScheduleActivity extends Activity implements OnClickListener {
     }
 
     @Override
-    public void onClick(View v) {
-        switch(v.getId()) {
+    public void onClick(View view) {
+        switch(view.getId()) {
         case R.id.logInButton:
-            Log.i(getClass().getSimpleName(), "Login button clicked");
-            this.startMainTabActivity();
-            //if (this.loginEditText.getText().toString().isEmpty())
-            //  Toast.makeText(IScheduleActivity.this, R.string.login_empty, Toast.LENGTH_SHORT).show();
-            //else if (this.passEditText.getText().toString().isEmpty())
-            //  Toast.makeText(IScheduleActivity.this, R.string.password_empty, Toast.LENGTH_SHORT).show();
-            //else {
+        	Log.i(getClass().getSimpleName(), "Login button clicked");
+            //this.startMainTabActivity();
+            if (this.loginEditText.getText().toString().isEmpty()) {
+                Log.i(getClass().getSimpleName(), "Not valid login");
+                Toast.makeText(IScheduleActivity.this, R.string.login_empty, Toast.LENGTH_SHORT).show();
+            } else if (this.passEditText.getText().toString().isEmpty()) {
+                Log.i(getClass().getSimpleName(), "Not valid password");
+                Toast.makeText(IScheduleActivity.this, R.string.password_empty, Toast.LENGTH_SHORT).show();
+            } else {
+                inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
                 PostRequestAuthManager authManager = new PostRequestAuthManager(
                     loginEditText.getText().toString(),
                     passEditText.getText().toString());
                 authManager.execute();
-
-            //}
+            }
         }
     }
 
@@ -100,8 +107,7 @@ public class IScheduleActivity extends Activity implements OnClickListener {
 
     private void startMainTabActivity() {
         Log.i(getClass().getSimpleName(), "Starting MainTabActivity");
-        Intent intent = new Intent(this, MainTabActivity.class);
-        startActivity(intent);
+        startActivity(new Intent(this, MainTabActivity.class));
         finish();
     }
 
@@ -114,11 +120,9 @@ public class IScheduleActivity extends Activity implements OnClickListener {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Intent intent;
         switch (item.getItemId()) {
         case R.id.action_compose:
-            intent = new Intent(this, AppPreferenceActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, AppPreferenceActivity.class));
             break;
         }
 
@@ -132,7 +136,9 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         private String login;
         private String pass;
         private String token;
-        //private ProgressDialog dialog;
+        private ProgressDialog progressDialog;
+        
+        private int connectionTimeout = 5000; // in milliseconds
 
         public PostRequestAuthManager(String login, String pass) {
             this.login = login;
@@ -143,13 +149,12 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         protected void onPreExecute() {
             super.onPreExecute();
             Log.i(getClass().getSimpleName(), "onPreExecute()");
-            //dialog = ProgressDialog.show(IScheduleActivity.this, "", getString(R.string.loading), true);
+            progressDialog = ProgressDialog.show(IScheduleActivity.this, "", getString(R.string.loading), true);
         }
         @Override
         protected HttpResponse doInBackground(Void... params) {
             Log.i(getClass().getSimpleName(), "doInBackground()");
             Thread.currentThread().setName(getClass().getName());
-            HttpClient client = new DefaultHttpClient();
             String reqString = null;
             try {
                 reqString = RequestStringsCreater.createAuthRequestSting(
@@ -164,8 +169,11 @@ public class IScheduleActivity extends Activity implements OnClickListener {
                 String port = sharedPreferences.getString(getString(R.string.pref_address_port_id),
                         StringConstants.DEFAULT_PORT);
                 String uri = url + ":" + port + "/main";
-                Log.i("", "Try to connect: " + uri);
+                Log.i(getClass().getSimpleName(), "Try to connect: " + uri);
                 HttpPost request = new HttpPost(uri);
+                HttpParams httpParams = new BasicHttpParams();
+                HttpConnectionParams.setConnectionTimeout(httpParams, connectionTimeout);
+                HttpClient client = new DefaultHttpClient(httpParams);
 
                 StringEntity entity = new StringEntity(reqString, "UTF-8");
                 request.setHeader(HTTP.CONTENT_TYPE, "text/xml");
@@ -174,6 +182,8 @@ public class IScheduleActivity extends Activity implements OnClickListener {
 
             } catch (ClientProtocolException e) {
                 e.printStackTrace();
+            } catch (ConnectTimeoutException e) {
+            	Log.e(getClass().getSimpleName(), "Не удалось подключится к серверу. Истекло время подключения.");
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -183,11 +193,11 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         }
 
         @Override
-        protected void onPostExecute(HttpResponse result) {
-            super.onPostExecute(result);
+        protected void onPostExecute(HttpResponse responce) {
+            super.onPostExecute(responce);
             Log.i(getClass().getSimpleName(), "onPostExecute()");
-            if (result != null) {
-                HttpEntity ent = result.getEntity();
+            if (responce != null) {
+                HttpEntity ent = responce.getEntity();
                 try {
                     BufferedReader r = new BufferedReader(
                             new InputStreamReader(ent.getContent()));
@@ -196,13 +206,13 @@ public class IScheduleActivity extends Activity implements OnClickListener {
                     while ((line = r.readLine()) != null) {
                         total.append(line);
                     }
-                    Log.i("AsyncTask", "Got XML: " + total);
+                    Log.i(getClass().getSimpleName(), "Got XML: " + total);
                     Map<String, String> resultMap = XMLParser.parseResponse(total.toString(), "/response/*");
                     if(resultMap.get(XMLParser.STATUS).equals(XMLParser.OK)) {
                         Toast.makeText(IScheduleActivity.this,
                                 getString(R.string.auth_success), Toast.LENGTH_LONG).show();
                         this.token = resultMap.get(XMLParser.TOKEN);
-                        Log.i("AsyncTask", "Got token: " + this.token);
+                        Log.i(getClass().getSimpleName(), "Got token: " + this.token);
                         saveSessionData();
 
                         resultMap = XMLParser.parseResponse(total.toString(), "/response/login-session/user/*");
@@ -226,7 +236,7 @@ public class IScheduleActivity extends Activity implements OnClickListener {
             } else {
                 Toast.makeText(IScheduleActivity.this, "Не получилось соединиться с серверoм.", Toast.LENGTH_LONG).show();
             }
-            //dialog.dismiss();
+            progressDialog.dismiss();
         }
 
         private void saveSessionData() {

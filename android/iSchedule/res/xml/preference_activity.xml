@@ -2,29 +2,29 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <PreferenceCategory 
-        android:title="@string/pref_server_category_tittle" >
+        android:title="@string/pref_server_category_title" >
         <EditTextPreference
             android:key="@string/pref_address_host_id"
             android:summary="@string/pref_address_host_summary"
-            android:title="@string/pref_address_host_tittle" />
+            android:title="@string/pref_address_host_title" />
         <EditTextPreference
             android:key="@string/pref_address_port_id"
             android:summary="@string/pref_address_port_summary"
-            android:title="@string/pref_address_port_tittle" />
+            android:title="@string/pref_address_port_title" />
     </PreferenceCategory>
     
     <PreferenceCategory 
-        android:title="@string/pref_sync_category_tittle" >
+        android:title="@string/pref_sync_category_title" >
         <CheckBoxPreference
             android:key="@string/pref_sync_id"
             android:summary="@string/pref_sync_summary"
-            android:title="@string/pref_sync_tittle" />
+            android:title="@string/pref_sync_title" />
 
         <ListPreference
             android:dependency="@string/pref_sync_id"
             android:key="@string/pref_account_list_id"
             android:summary="@string/pref_account_list_summary"
-            android:title="@string/pref_account_list_tittle" />
+            android:title="@string/pref_account_list_title" />
     </PreferenceCategory>
 
 </PreferenceScreen>

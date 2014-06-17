@@ -10,6 +10,7 @@ import android.accounts.AccountManager;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
@@ -21,16 +22,20 @@ import android.view.ViewGroup;
 
 public class AppPreferenceFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
     private SharedPreferences sharedPreferences;
+    
     private String addressHostValue;
     private String addressPortValue;
     private String accountListValue;
+    private Boolean syncCalendarValue;
 
     private String addressHostKey;
     private String addressPortKey;
     private String accountListKey;
+    private String syncCalendarKey;
 
     private EditTextPreference addressHostPreference;
     private EditTextPreference addressPortPreference;
+    private CheckBoxPreference syncCalendarPreference;
     private ListPreference accountListPreference;
 
     @Override
@@ -42,10 +47,13 @@ public class AppPreferenceFragment extends PreferenceFragment implements OnShare
         addressHostKey = getString(R.string.pref_address_host_id);
         addressPortKey = getString(R.string.pref_address_port_id);
         accountListKey = getString(R.string.pref_account_list_id);
+        syncCalendarKey = getString(R.string.pref_sync_id);
 
         addressHostPreference = (EditTextPreference) getPreferenceScreen().findPreference(addressHostKey);
         addressPortPreference = (EditTextPreference) getPreferenceScreen().findPreference(addressPortKey);
+        syncCalendarPreference = (CheckBoxPreference) getPreferenceScreen().findPreference(syncCalendarKey);
         accountListPreference = (ListPreference) getPreferenceScreen().findPreference(accountListKey);
+        
     }
 
     @Override
@@ -58,11 +66,11 @@ public class AppPreferenceFragment extends PreferenceFragment implements OnShare
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
-        Log.i(getClass().getName(), "onSharedPreferenceChanged()");
-        Log.i(getClass().getName(), key + "   " + sharedPreferences.getAll().get(key).toString());
+        Log.i(getClass().getSimpleName(), "onSharedPreferenceChanged()");
+        Log.i(getClass().getSimpleName(), "Field: [" + key + "], new value: " + sharedPreferences.getAll().get(key).toString());
         updatePreferences();
     }
-
+    
     @Override
     public void onResume() {
         super.onResume();
@@ -77,12 +85,14 @@ public class AppPreferenceFragment extends PreferenceFragment implements OnShare
     }
 
     public void updatePreferences() {
-        Log.i(getClass().getName(), "updatePreferences");
+        Log.i(getClass().getSimpleName(), "Update Preferences");
         addressHostValue = sharedPreferences.getString(addressHostKey, StringConstants.DEFAULT_HOST);
         addressHostPreference.setSummary(addressHostValue);
+        addressHostPreference.setText(addressHostValue);
 
         addressPortValue = sharedPreferences.getString(addressPortKey, StringConstants.DEFAULT_PORT);
         addressPortPreference.setSummary(addressPortValue);
+        addressPortPreference.setText(addressPortValue);
 
         accountListValue = sharedPreferences.getString(accountListKey, null);
         if (accountListValue != null)
@@ -90,11 +100,15 @@ public class AppPreferenceFragment extends PreferenceFragment implements OnShare
         else
             // TODO HARDCODE
             accountListPreference.setSummary("Выберите аккаунт для синхронизации");
+        
+        syncCalendarValue = sharedPreferences.getBoolean(syncCalendarKey, false);
 
-        List<String> accountList = getAccountNames();
-        CharSequence[] accountSequence = accountList.toArray(new CharSequence[accountList.size()]);
-        accountListPreference.setEntries(accountSequence);
-        accountListPreference.setEntryValues(accountSequence);
+        if (syncCalendarValue) {
+            List<String> accountList = getAccountNames();
+            CharSequence[] accountSequence = accountList.toArray(new CharSequence[accountList.size()]);
+            accountListPreference.setEntries(accountSequence);
+            accountListPreference.setEntryValues(accountSequence);
+        }
     }
 
     private List<String> getAccountNames() {
@@ -105,7 +119,7 @@ public class AppPreferenceFragment extends PreferenceFragment implements OnShare
         for (Account account : accounts)
             possibleEmails.add(account.name);
 
-        Log.i(getClass().getName(), possibleEmails.toString());
+        Log.i(getClass().getSimpleName(), "Possible e-mails: " + possibleEmails.toString());
         return possibleEmails;
     }
 }

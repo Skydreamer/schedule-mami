@@ -65,22 +65,22 @@
     <string name="password">Пароль</string>
 
     <!-- Названия и описание настроек -->
-    <string name="pref_server_category_tittle">Настройки сервера</string>
-    <string name="pref_sync_category_tittle">Настройки синхронизации</string>
+    <string name="pref_server_category_title">Настройки сервера</string>
+    <string name="pref_sync_category_title">Настройки синхронизации</string>
 
-    <string name="pref_address_host_tittle">Хост</string>
+    <string name="pref_address_host_title">Хост</string>
     <string name="pref_address_host_summary"></string>
     <string name="pref_address_host_id">address_host</string>
 
-    <string name="pref_address_port_tittle">Порт</string>
+    <string name="pref_address_port_title">Порт</string>
     <string name="pref_address_port_summary"></string>
     <string name="pref_address_port_id">address_port</string>
 
-    <string name="pref_sync_tittle">Синхронизация</string>
+    <string name="pref_sync_title">Синхронизация</string>
     <string name="pref_sync_summary">С календарем Google</string>
     <string name="pref_sync_id">sync</string>
 
-    <string name="pref_account_list_tittle">Аккаунт</string>
+    <string name="pref_account_list_title">Аккаунт</string>
     <string name="pref_account_list_summary"></string>
     <string name="pref_account_list_id">account_list</string>
 

@@ -29,7 +29,7 @@ import android.widget.Spinner;
 
 
 public class MenuSettingsActivity extends Activity implements OnClickListener {
-
+	// Разобраться с getCalendars() и удалить класс за ненадобностью
     private String host;
     private String port;
     private boolean isChecked;

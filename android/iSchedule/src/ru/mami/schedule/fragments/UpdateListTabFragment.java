@@ -16,12 +16,12 @@ import android.widget.Button;
 import android.widget.ListView;
 
 public class UpdateListTabFragment extends Fragment implements OnClickListener {
-    ListView listView;
+    private ListView listView;
 
-    SubjectAdapter subjectAdapter;
-    ScheduleUpdateListAdapter updateListAdapter;
+    private SubjectAdapter subjectAdapter;
+    private ScheduleUpdateListAdapter updateListAdapter;
 
-    ArrayList<Subject> subjects;
+    private ArrayList<Subject> subjects;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
