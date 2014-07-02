@@ -1,10 +1,8 @@
 package ru.mami.schedule.utils;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,13 +22,21 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import ru.mami.schedule.adapters.SubjectAdapter;
+import ru.mami.schedule.R;
+import ru.mami.schedule.activities.IScheduleActivity;
+import ru.mami.schedule.adapters.DatabaseAdapter;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -42,6 +48,7 @@ import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 public class UpdateService extends Service {
@@ -59,11 +66,18 @@ public class UpdateService extends Service {
         Log.i(getClass().getSimpleName(), "onStartCommand()");
         Log.i(getClass().getSimpleName(), "Service params: startId - " + startId + " flags - " + flags);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplication());
-        String token = sharedPreferences.getString(StringConstants.TOKEN, null);
+        
+        String httpHostKey = getString(R.string.pref_address_host_id);
+        String httpPortKey = getString(R.string.pref_address_port_id);
+        String token = sharedPreferences.getString(StringConstants.USER_TOKEN, null);
+        String httpHost = sharedPreferences.getString(httpHostKey, "");
+        String httpPort = sharedPreferences.getString(httpPortKey, "");
+        String httpUri = httpHost + ":" + httpPort + "/main";
+        
         if (token != null)
             if (isNetworkAvailable()){
                 Log.i(getClass().getSimpleName(), "Starting AsyncUpdater");
-                AsyncUpdater updater = new AsyncUpdater(this, token);
+                AsyncUpdater updater = new AsyncUpdater(this, token, httpUri);
                 updater.execute();
             }
             else
@@ -78,16 +92,35 @@ public class UpdateService extends Service {
         super.onCreate();
         Log.i(getClass().getSimpleName(), "onCreate()");
     }
+    
+    public void notifyUser() {
+        int notificationID = 001;
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this);
+        notificationBuilder.setSmallIcon(R.drawable.ic_launcher);
+        notificationBuilder.setContentTitle("Доступно обновление");
+        notificationBuilder.setContentText("Загружена обновленная версия расписания");
+        
+        Intent clickIntent = new Intent(this, IScheduleActivity.class);
+        PendingIntent clickPendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        notificationBuilder.setContentIntent(clickPendingIntent);
+        
+        NotificationManager notificationManager =  (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(notificationID, notificationBuilder.build());
+    }
 
     private class AsyncUpdater extends
         AsyncTask<Void, Void, ArrayList<Subject>> {
 
         private String token;
+        private String httpUri;
         private Context context;
+        
+        private int connectionTimeout = 3000; // in milliseconds
 
-        public AsyncUpdater(Context context, String token) {
+        public AsyncUpdater(Context context, String token, String uri) {
             this.token = token;
             this.context = context;
+            this.httpUri = uri;
         }
 
         @Override
@@ -101,32 +134,30 @@ public class UpdateService extends Service {
             Log.i(getClass().getSimpleName(), "doInBackground");
             Thread.currentThread().setName(getClass().getName());
 
-            HttpClient client = new DefaultHttpClient();
             String reqString = null;
             try {
                 reqString = RequestStringsCreater.createUpdateString(token);
-            } catch (ParserConfigurationException e1) {
-                e1.printStackTrace();
+            } catch (ParserConfigurationException exeption) {
+                exeption.printStackTrace();
             }
             HttpResponse response = null;
             try {
-                HttpPost request = new HttpPost(StringConstants.MY_URI);
-                StringEntity entity = new StringEntity(reqString, "UTF-8");
+                Log.i(getClass().getSimpleName(), "Try to connect: " + httpUri);
+                HttpPost request = new HttpPost(httpUri);
+                HttpParams httpParams = new BasicHttpParams();
+                HttpConnectionParams.setConnectionTimeout(httpParams, connectionTimeout);
+                HttpClient client = new DefaultHttpClient(httpParams);
+                
+                StringEntity stringEntity = new StringEntity(reqString, "UTF-8");
                 request.setHeader(HTTP.CONTENT_TYPE, "text/xml");
-                request.setEntity(entity);
+                request.setEntity(stringEntity);
                 response = client.execute(request);
-                HttpEntity ent = response.getEntity();
-                BufferedReader r = new BufferedReader(new InputStreamReader(
-                        ent.getContent()));
-                StringBuilder total = new StringBuilder();
-                String line;
-                while ((line = r.readLine()) != null) {
-                    total.append(line);
-                }
-                String rez = total.toString();
-                String status = XMLParser.parseResponse(rez, "/response/*").get("status");
+                
+                HttpEntity entity = response.getEntity();
+                String entityString = EntityUtils.toString(entity);
+                String status = XMLParser.parseResponse(entityString, "/response/*").get("status");
                 if (status.equals("OK")) {
-                    return parseSchedule(rez);
+                    return parseSchedule(entityString);
                 }
             } catch (ClientProtocolException e) {
                 e.printStackTrace();
@@ -145,17 +176,17 @@ public class UpdateService extends Service {
             Log.i(getClass().getSimpleName(), "onPostExecute");
 
             if (subjects != null) {
-                UpdateManager.notificateAboutUpdate(context);
+                notifyUser();
             }
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
             Editor editor = sharedPreferences.edit();
             Calendar calend = Calendar.getInstance();
             SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-            SubjectAdapter adapter = new SubjectAdapter(context);
-            adapter.syncDB(subjects);
+            DatabaseAdapter databaseAdapter = DatabaseAdapter.getInstance(context);
+            databaseAdapter.syncDB(subjects);
 
-            editor.putString(StringConstants.SHARED_LAST_SYNC_DATE, sdf.format(calend.getTime()));
+            editor.putString(StringConstants.USER_LAST_SYNC_DATE, sdf.format(calend.getTime()));
             editor.commit();
             stopSelf();
         }

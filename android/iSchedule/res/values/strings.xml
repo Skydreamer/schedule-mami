@@ -75,6 +75,15 @@
     <string name="pref_address_port_title">Порт</string>
     <string name="pref_address_port_summary"></string>
     <string name="pref_address_port_id">address_port</string>
+    
+    <string name="pref_check_updates_title">Проверка обновлений</string>
+    <string name="pref_check_updates_summary"></string>
+    <string name="pref_check_updates_id">check_updates</string>
+    
+    <string name="pref_update_delay_title">Периодичность запросов</string>
+    <string name="pref_update_delay_summary"></string>
+    <string name="pref_update_delay_id">update_delay</string>
+    
 
     <string name="pref_sync_title">Синхронизация</string>
     <string name="pref_sync_summary">С календарем Google</string>

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import ru.mami.schedule.R;
-import ru.mami.schedule.adapters.SubjectAdapter;
+import ru.mami.schedule.adapters.DatabaseAdapter;
 import ru.mami.schedule.adapters.SubjectsListAdapter;
 import ru.mami.schedule.utils.Subject;
 import android.os.Bundle;
@@ -63,7 +63,7 @@ public class ScheduleListTabFragment extends Fragment {
         group = new ArrayList<ArrayList<String>>();
         subjList = new ArrayList<ArrayList<Subject>>();
 
-        SubjectAdapter sa = new SubjectAdapter(this.getActivity());
+        DatabaseAdapter databaseAdapter = DatabaseAdapter.getInstance(getActivity());
 
         Calendar calend = Calendar.getInstance(Locale.FRANCE);
 
@@ -77,7 +77,7 @@ public class ScheduleListTabFragment extends Fragment {
             tmp.add(ruDays.get(disp_name));
             group.add(tmp);
 
-            subjList.add(sa.getSubjectsByDate(disp_name));
+            subjList.add(databaseAdapter.getSubjectsByDate(disp_name));
         }
     }
 }

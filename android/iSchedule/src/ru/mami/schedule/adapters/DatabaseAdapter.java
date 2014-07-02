@@ -11,7 +11,8 @@ import ru.mami.schedule.utils.Subject;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class SubjectAdapter extends SQLiteOpenHelper {
+public class DatabaseAdapter extends SQLiteOpenHelper {
+    private static DatabaseAdapter instance;
 
     public static final String DB_NAME = "schedule_db";
     private static final int DB_VERSION = 1;
@@ -46,17 +47,26 @@ public class SubjectAdapter extends SQLiteOpenHelper {
             GROUPS + " TEXT, " +
             ACTIVITIES + " TEXT)";
 
-    public SubjectAdapter(Context context) {
+    private DatabaseAdapter(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
+    }
+    
+    public static DatabaseAdapter getInstance(Context context) {
+        if (instance == null) {
+            instance = new DatabaseAdapter(context);
+        }
+        return instance;
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        Log.i(getClass().getSimpleName(), "onCreate()");
         db.execSQL(CREATE_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase arg0, int arg1, int arg2) {
+        Log.i(getClass().getSimpleName(), "onUpgrade() - //TODO//");
     }
 
     public void saveSubject(Subject subj) {
@@ -75,15 +85,15 @@ public class SubjectAdapter extends SQLiteOpenHelper {
 
         SQLiteDatabase db = this.getWritableDatabase();
         try {
-            int updCount = db.update(SubjectAdapter.TABLE_NAME, cv,
+            int updCount = db.update(DatabaseAdapter.TABLE_NAME, cv,
                     "id = ?", new String[] {subj.getId()});
             if (updCount == 0) {
-                Log.i("saveSubject", "insert " + subj.getId());
+                Log.i(getClass().getSimpleName(), "Insert subject: " + subj.getId());
                 cv.put("id", subj.getId());
-                db.insert(SubjectAdapter.TABLE_NAME, null, cv);
+                db.insert(DatabaseAdapter.TABLE_NAME, null, cv);
             }
             else {
-                Log.i("saveSubject", "update " + subj.getId());
+                Log.i(getClass().getSimpleName(), "Update subject: " + subj.getId());
             }
         }
         finally {
@@ -92,10 +102,10 @@ public class SubjectAdapter extends SQLiteOpenHelper {
     }
 
     public void deleteSubject(Subject subj) {
-        Log.i("deleteSubject", subj.getId());
+        Log.i(getClass().getSimpleName(), "Delete subject: " + subj.getId());
         SQLiteDatabase db = this.getWritableDatabase();
         try {
-            db.delete(SubjectAdapter.TABLE_NAME,
+            db.delete(DatabaseAdapter.TABLE_NAME,
                     "id = ?", new String[] {subj.getId()});
         }
         finally {
@@ -115,28 +125,28 @@ public class SubjectAdapter extends SQLiteOpenHelper {
     }
 
     private ArrayList<Subject> loadSubjects(Cursor cursor) {
-        Log.i("loadSubjects", "start");
+        Log.i(getClass().getSimpleName(), "loadSubjects()");
         ArrayList<Subject> subjects = new ArrayList<Subject>();
         if (cursor != null && cursor.moveToFirst()) {
             String[] names = cursor.getColumnNames();
             do {
                 HashMap<String, String> rawSubj = new HashMap<String, String>();
-                Log.i("loadSubjects", "--new object");
+                Log.i(getClass().getSimpleName(), "New object");
                 for (int i = 0; i < names.length; ++i) {
                     rawSubj.put(names[i], cursor.getString(i));
-                    Log.i("loadSubjects", "name=" + names[i] + 
-                            ", value=" + cursor.getString(i));
+                    Log.i(getClass().getSimpleName(), "Name - " + names[i] + 
+                            ", value - " + cursor.getString(i));
                 }
                 Subject subj = new Subject(rawSubj);
                 subjects.add(subj);
             } while (cursor.moveToNext());
         }
-        Log.i("loadSubjects", "--total count=" + subjects.size());
+        Log.i(getClass().getSimpleName(), "Total count - " + subjects.size());
         return subjects;
     }
 
     public ArrayList<Subject> getNewSubjects() {
-        Log.i("getNewSubjects", "start");
+        Log.i(getClass().getSimpleName(), "getNewSubjects()");
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_NAME, columns, 
                 "checked = ?", new String[] {"false"}, null, null, null);
@@ -146,7 +156,7 @@ public class SubjectAdapter extends SQLiteOpenHelper {
     }
 
     public ArrayList<Subject> getSubjectsByDate(String day) {
-        Log.i("getSubjectsByDate", day);
+        Log.i(getClass().getSimpleName(), "getSubjectByDate() - " + day);
 /*      
         HashMap<String, String> ruDays = new HashMap<String, String>();
         ruDays.put("Mon", "Понедельник");
@@ -167,7 +177,7 @@ public class SubjectAdapter extends SQLiteOpenHelper {
     }
 
     public Subject getSubjectById(String id) {
-        Log.i("getSubjectById", id);
+        Log.i(getClass().getSimpleName(), "getSubjectById() -" + id);
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_NAME, columns,
                 "id = ?", new String[] {id}, null, null, null);
@@ -179,7 +189,7 @@ public class SubjectAdapter extends SQLiteOpenHelper {
     }
 
     public ArrayList<Subject> getAll() {
-        Log.i("getAll", "start");
+        Log.i(getClass().getSimpleName(), "getAll()");
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(true, TABLE_NAME,
                 null, null, null, null, null, null, null);

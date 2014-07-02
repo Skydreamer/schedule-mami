@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 import ru.mami.schedule.R;
+import ru.mami.schedule.adapters.DatabaseAdapter;
 import ru.mami.schedule.adapters.TabCollectionPagerAdapter;
-import ru.mami.schedule.adapters.SubjectAdapter;
 import ru.mami.schedule.utils.CalendarManager;
 import ru.mami.schedule.utils.StringConstants;
 import ru.mami.schedule.utils.Subject;
@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.CalendarContract;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
@@ -37,6 +38,7 @@ public class MainTabActivity extends FragmentActivity implements
         OnPageChangeListener, TabListener {
     private TabCollectionPagerAdapter collectionPagerAdapter;
     private ExitDialogFragment exitDialogFragment;
+    private SharedPreferences sharedPreferences;
 
     private PendingIntent updateServiceIntent;
     private AlarmManager alarmManager;
@@ -50,15 +52,21 @@ public class MainTabActivity extends FragmentActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(getClass().getSimpleName(), "MainTabActivity created");
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        Log.i(getClass().getSimpleName(), "DefaultSharedPreference: " + sharedPreferences.getAll().toString());
         setContentView(R.layout.main_tab_layout);
         lastSyncTV = (TextView) findViewById(R.id.maintab_last_sync);
         tabPager = (ViewPager) findViewById(R.id.tabPager);
 
+        initiateTabs();
+    }
+    
+    private void initiateTabs() {
         collectionPagerAdapter = new TabCollectionPagerAdapter(
                 getSupportFragmentManager());
         tabPager.setAdapter(collectionPagerAdapter);
         tabPager.setOnPageChangeListener(this);
-
+        
         ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
@@ -76,16 +84,14 @@ public class MainTabActivity extends FragmentActivity implements
         updatesTab.setText(R.string.updates);
         updatesTab.setTabListener(this);
         actionBar.addTab(updatesTab);
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         Log.i(getClass().getSimpleName(), "MainTabActivity onResume");
-        String lastSync = getSharedPreferences(
-                StringConstants.SCHEDULE_SHARED_PREFERENCES, MODE_PRIVATE)
-                .getString(StringConstants.SHARED_LAST_SYNC_DATE, "-");
+        String lastSync = sharedPreferences.getString(
+                StringConstants.USER_LAST_SYNC_DATE, "-");
         lastSyncTV.setText(lastSync);
         startUpdateService();
     }
@@ -125,30 +131,30 @@ public class MainTabActivity extends FragmentActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         Intent intent;
         switch (item.getItemId()) {
-        case R.id.menu_check_updates:
-            this.testCalendar();
-            break;
-        case R.id.menu_exit:
-            if (exitDialogFragment == null)
-                exitDialogFragment = new ExitDialogFragment(
-                        getString(R.string.sure_to_exit), this);
-            exitDialogFragment.show(getSupportFragmentManager(), "");
-            break;
-        case R.id.menu_info:
-            intent = new Intent(this, UserInfoDialogActivity.class);
-            startActivity(intent);
-            break;
-        case R.id.menu_settings:
-            intent = new Intent(this, AppPreferenceActivity.class);
-            startActivity(intent);
-            break;
+            case R.id.menu_check_updates:
+                this.testCalendar();
+                break;
+            case R.id.menu_exit:
+                if (exitDialogFragment == null)
+                    exitDialogFragment = new ExitDialogFragment(
+                            getString(R.string.sure_to_exit), this);
+                exitDialogFragment.show(getSupportFragmentManager(), "");
+                break;
+            case R.id.menu_info:
+                intent = new Intent(this, UserInfoDialogActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.menu_settings:
+                intent = new Intent(this, AppPreferenceActivity.class);
+                startActivity(intent);
+                break;
         }
 
         return true;
     }
 
     private void testCalendar() {
-        SubjectAdapter subjectAdapter = new SubjectAdapter(this);
+        DatabaseAdapter subjectAdapter = DatabaseAdapter.getInstance(this);
         CalendarManager calendarManager = new CalendarManager(this);
         ArrayList<Subject> subjects = subjectAdapter.getAll();
         for (Subject subject : subjects) {
@@ -220,7 +226,7 @@ class ExitDialogFragment extends android.support.v4.app.DialogFragment
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setIcon(R.drawable.ic_launcher);
         builder.setTitle(R.string.app_name);
-        builder.setMessage(this.question);
+        builder.setMessage(question);
 
         builder.setPositiveButton(getString(R.string.dialog_yes), this);
         builder.setNegativeButton(getString(R.string.dialog_no), this);
@@ -231,27 +237,30 @@ class ExitDialogFragment extends android.support.v4.app.DialogFragment
     @Override
     public void onClick(DialogInterface dialog, int which) {
         switch (which) {
-        case Dialog.BUTTON_POSITIVE:
-            SharedPreferences pref = activity.getSharedPreferences(
-                    StringConstants.SCHEDULE_SHARED_PREFERENCES,
-                    Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = pref.edit();
-            editor.remove(StringConstants.TOKEN);
-            editor.commit();
-            SharedPreferences schedule = activity.getSharedPreferences(
-                    StringConstants.MY_SCHEDULE, Context.MODE_PRIVATE);
-            editor = schedule.edit();
-            for (String key : pref.getAll().keySet()) {
-                editor.remove(key);
-            }
-            editor.commit();
-            Intent intent = new Intent(activity, IScheduleActivity.class);
-            startActivity(intent);
-            activity.finish();
-            break;
-        case Dialog.BUTTON_NEGATIVE:
-            dialog.cancel();
-            break;
+            case Dialog.BUTTON_POSITIVE:
+                SharedPreferences sharedPreferences = PreferenceManager
+                        .getDefaultSharedPreferences(activity);
+                SharedPreferences.Editor preferenceEditor = sharedPreferences
+                        .edit();
+                preferenceEditor.remove(StringConstants.USER_TOKEN);
+                preferenceEditor.remove(StringConstants.USER_LAST_SYNC_DATE);
+                preferenceEditor.commit();
+
+                // ??? ???
+                SharedPreferences schedule = activity.getSharedPreferences(
+                        StringConstants.MY_SCHEDULE, Context.MODE_PRIVATE);
+                preferenceEditor = schedule.edit();
+                for (String key : sharedPreferences.getAll().keySet()) {
+                    preferenceEditor.remove(key);
+                }
+                preferenceEditor.commit();
+
+                startActivity(new Intent(activity, IScheduleActivity.class));
+                activity.finish();
+                break;
+            case Dialog.BUTTON_NEGATIVE:
+                dialog.cancel();
+                break;
         }
     }
 

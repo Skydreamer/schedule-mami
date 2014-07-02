@@ -21,24 +21,28 @@ public class UserAdapter {
     }
 
     public Map<String, String> getUserAsMap() {
-        Map<String, String> user = new HashMap<String, String>();
-        SharedPreferences mSharedPreferences = context.getSharedPreferences(
-                StringConstants.SCHEDULE_SHARED_PREFERENCES, Context.MODE_PRIVATE);
-        user.put("name", mSharedPreferences.getString("name", "-"));
-        user.put("login", mSharedPreferences.getString("login", "-"));
-        user.put("phone", mSharedPreferences.getString("phone", "-"));
-        user.put("email", mSharedPreferences.getString("email", "-"));
-        return user;
+        Map<String, String> userInfo = new HashMap<String, String>();
+        SharedPreferences sharedPreferences = context.getSharedPreferences(
+                StringConstants.USER_INFO_PREFERENCE, Context.MODE_PRIVATE);
+        userInfo.put(StringConstants.USER_NAME,
+                sharedPreferences.getString(StringConstants.USER_NAME, "-"));
+        userInfo.put(StringConstants.USER_LOGIN,
+                sharedPreferences.getString(StringConstants.USER_LOGIN, "-"));
+        userInfo.put(StringConstants.USER_PHONE,
+                sharedPreferences.getString(StringConstants.USER_PHONE, "-"));
+        userInfo.put(StringConstants.USER_EMAIL,
+                sharedPreferences.getString(StringConstants.USER_EMAIL, "-"));
+        return userInfo;
     }
 
     public void saveUser(String name, String login, String email, String phone) {
-        SharedPreferences mSharedPreferences = context.getSharedPreferences(
-                StringConstants.SCHEDULE_SHARED_PREFERENCES, Context.MODE_PRIVATE);
-        Editor editor = mSharedPreferences.edit();
-        editor.putString("name", name);
-        editor.putString("login", login);
-        editor.putString("email", email);
-        editor.putString("phone", phone);
+        SharedPreferences sharedPreferences = context.getSharedPreferences(
+                StringConstants.USER_INFO_PREFERENCE, Context.MODE_PRIVATE);
+        Editor editor = sharedPreferences.edit();
+        editor.putString(StringConstants.USER_NAME, name);
+        editor.putString(StringConstants.USER_LOGIN, login);
+        editor.putString(StringConstants.USER_EMAIL, email);
+        editor.putString(StringConstants.USER_PHONE, phone);
         editor.commit();
     }
 }

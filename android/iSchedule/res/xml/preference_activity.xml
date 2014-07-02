@@ -11,6 +11,15 @@
             android:key="@string/pref_address_port_id"
             android:summary="@string/pref_address_port_summary"
             android:title="@string/pref_address_port_title" />
+        <CheckBoxPreference 
+            android:key="@string/pref_check_updates_id"
+            android:summary="@string/pref_check_updates_summary"
+            android:title="@string/pref_check_updates_title"/>
+        <ListPreference 
+            android:dependency="@string/pref_check_updates_id"
+            android:key="@string/pref_update_delay_id"
+            android:summary="@string/pref_update_delay_summary"
+            android:title="@string/pref_update_delay_title"/>
     </PreferenceCategory>
     
     <PreferenceCategory 
@@ -19,7 +28,6 @@
             android:key="@string/pref_sync_id"
             android:summary="@string/pref_sync_summary"
             android:title="@string/pref_sync_title" />
-
         <ListPreference
             android:dependency="@string/pref_sync_id"
             android:key="@string/pref_account_list_id"

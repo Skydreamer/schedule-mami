@@ -27,7 +27,7 @@ public class CalendarManager {
     public CalendarManager(Context context) {
         this.context = context;
         SharedPreferences mSharedPreferences = context.getSharedPreferences(
-                StringConstants.SCHEDULE_SHARED_PREFERENCES, context.MODE_PRIVATE);
+                StringConstants.USER_INFO_PREFERENCE, context.MODE_PRIVATE);
         accountName = mSharedPreferences.getString("accountName", "");
         calID = mSharedPreferences.getLong("calendarID", 0);
 

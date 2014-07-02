@@ -1,8 +1,6 @@
 package ru.mami.schedule.activities;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -19,6 +17,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 
 import ru.mami.schedule.R;
 import ru.mami.schedule.adapters.UserAdapter;
@@ -58,9 +57,7 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         
-        Log.i(getClass().getSimpleName(), "DefaultSharedPreference: " + sharedPreferences.getAll().toString());
-
-        if (sharedPreferences.getString(StringConstants.TOKEN, null) == null) {
+        if (sharedPreferences.getString(StringConstants.USER_TOKEN, null) == null) {
             setContentView(R.layout.auth_layout);
         } else {
             Log.i(getClass().getSimpleName(), "Load user info from preferences");
@@ -83,7 +80,6 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         switch(view.getId()) {
         case R.id.logInButton:
         	Log.i(getClass().getSimpleName(), "Login button clicked");
-            //this.startMainTabActivity();
             if (this.loginEditText.getText().toString().isEmpty()) {
                 Log.i(getClass().getSimpleName(), "Not valid login");
                 Toast.makeText(IScheduleActivity.this, R.string.login_empty, Toast.LENGTH_SHORT).show();
@@ -138,7 +134,7 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         private String token;
         private ProgressDialog progressDialog;
         
-        private int connectionTimeout = 5000; // in milliseconds
+        private int connectionTimeout = 3000; // in milliseconds
 
         public PostRequestAuthManager(String login, String pass) {
             this.login = login;
@@ -148,13 +144,15 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            Log.i(getClass().getSimpleName(), "onPreExecute()");
+            Log.i(getClass().getSimpleName(), "onPreExecute()");       
             progressDialog = ProgressDialog.show(IScheduleActivity.this, "", getString(R.string.loading), true);
         }
+        
         @Override
         protected HttpResponse doInBackground(Void... params) {
             Log.i(getClass().getSimpleName(), "doInBackground()");
             Thread.currentThread().setName(getClass().getName());
+            
             String reqString = null;
             try {
                 reqString = RequestStringsCreater.createAuthRequestSting(
@@ -162,15 +160,15 @@ public class IScheduleActivity extends Activity implements OnClickListener {
             } catch (ParserConfigurationException e1) {
                 e1.printStackTrace();
             }
-            HttpResponse responce = null;
+            HttpResponse response = null;
             try {
-                String url = sharedPreferences.getString(getString(R.string.pref_address_host_id),
+                String httpHost = sharedPreferences.getString(getString(R.string.pref_address_host_id),
                         StringConstants.DEFAULT_HOST);
-                String port = sharedPreferences.getString(getString(R.string.pref_address_port_id),
+                String httpPort = sharedPreferences.getString(getString(R.string.pref_address_port_id),
                         StringConstants.DEFAULT_PORT);
-                String uri = url + ":" + port + "/main";
-                Log.i(getClass().getSimpleName(), "Try to connect: " + uri);
-                HttpPost request = new HttpPost(uri);
+                String httpUri = httpHost + ":" + httpPort + "/main";
+                Log.i(getClass().getSimpleName(), "Try to connect: " + httpUri);
+                HttpPost request = new HttpPost(httpUri);
                 HttpParams httpParams = new BasicHttpParams();
                 HttpConnectionParams.setConnectionTimeout(httpParams, connectionTimeout);
                 HttpClient client = new DefaultHttpClient(httpParams);
@@ -178,8 +176,7 @@ public class IScheduleActivity extends Activity implements OnClickListener {
                 StringEntity entity = new StringEntity(reqString, "UTF-8");
                 request.setHeader(HTTP.CONTENT_TYPE, "text/xml");
                 request.setEntity(entity);
-                responce = client.execute(request);
-
+                response = client.execute(request);
             } catch (ClientProtocolException e) {
                 e.printStackTrace();
             } catch (ConnectTimeoutException e) {
@@ -189,59 +186,64 @@ public class IScheduleActivity extends Activity implements OnClickListener {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return responce;
+            return response;
         }
 
         @Override
-        protected void onPostExecute(HttpResponse responce) {
-            super.onPostExecute(responce);
+        protected void onPostExecute(HttpResponse response) {
+            super.onPostExecute(response);
             Log.i(getClass().getSimpleName(), "onPostExecute()");
-            if (responce != null) {
-                HttpEntity ent = responce.getEntity();
-                try {
-                    BufferedReader r = new BufferedReader(
-                            new InputStreamReader(ent.getContent()));
-                    StringBuilder total = new StringBuilder();
-                    String line;
-                    while ((line = r.readLine()) != null) {
-                        total.append(line);
+            if (response != null) {
+                Log.i(getClass().getSimpleName(), "Response status code: " + response.getStatusLine().toString());
+                Log.i(getClass().getSimpleName(), "Response content length: " + response.getEntity().getContentLength());
+                
+                if (response.getStatusLine().getStatusCode() == 200) {
+                    HttpEntity entity = response.getEntity();
+                    try {
+                        String entityString = EntityUtils.toString(entity); 
+                        
+                        Log.i(getClass().getSimpleName(), "Got XML: " + entityString);
+                        Map<String, String> resultMap = XMLParser.parseResponse(entityString, "/response/*");
+                        if(resultMap.get(XMLParser.STATUS).equals(XMLParser.OK)) {
+                            Toast.makeText(IScheduleActivity.this,
+                                    getString(R.string.auth_success), Toast.LENGTH_LONG).show();
+                            this.token = resultMap.get(XMLParser.TOKEN);
+                            Log.i(getClass().getSimpleName(), "Got token: " + this.token);
+                            saveSessionData();
+    
+                            resultMap = XMLParser.parseResponse(entityString, "/response/login-session/user/*");
+                            UserAdapter us = new UserAdapter(getApplicationContext());
+                            us.saveUser(resultMap.get(XMLParser.NAME), resultMap.get(XMLParser.LOGIN),
+                                    resultMap.get(XMLParser.EMAIL), resultMap.get(XMLParser.PHONE));
+                            startMainTabActivity();
+    
+                        } else {
+                            Toast.makeText(IScheduleActivity.this,
+                                    getString(R.string.login_error), Toast.LENGTH_LONG).show();
+                        }
+                    } catch (IllegalStateException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    Log.i(getClass().getSimpleName(), "Got XML: " + total);
-                    Map<String, String> resultMap = XMLParser.parseResponse(total.toString(), "/response/*");
-                    if(resultMap.get(XMLParser.STATUS).equals(XMLParser.OK)) {
-                        Toast.makeText(IScheduleActivity.this,
-                                getString(R.string.auth_success), Toast.LENGTH_LONG).show();
-                        this.token = resultMap.get(XMLParser.TOKEN);
-                        Log.i(getClass().getSimpleName(), "Got token: " + this.token);
-                        saveSessionData();
-
-                        resultMap = XMLParser.parseResponse(total.toString(), "/response/login-session/user/*");
-                        Context context = getApplicationContext();
-                        UserAdapter us = new UserAdapter(context);
-                        us.saveUser(resultMap.get(XMLParser.NAME), resultMap.get(XMLParser.LOGIN),
-                                resultMap.get(XMLParser.EMAIL), resultMap.get(XMLParser.PHONE));
-                        startMainTabActivity();
-
-                    } else {
-                        Toast.makeText(IScheduleActivity.this,
-                                getString(R.string.login_error), Toast.LENGTH_LONG).show();
-                    }
-                } catch (IllegalStateException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                }
+                else {
+                    Log.i(getClass().getSimpleName(), "Response is null");
                 }
             } else {
-                Toast.makeText(IScheduleActivity.this, "Не получилось соединиться с серверoм.", Toast.LENGTH_LONG).show();
+                Toast.makeText(IScheduleActivity.this,
+                        "Не получилось соединиться с серверoм.",
+                        Toast.LENGTH_LONG).show();
+                startMainTabActivity();
             }
             progressDialog.dismiss();
         }
 
         private void saveSessionData() {
             Editor editor = sharedPreferences.edit();
-            editor.putString(StringConstants.TOKEN, this.token);
+            editor.putString(StringConstants.USER_TOKEN, this.token);
             editor.commit();
         }
 

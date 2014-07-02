@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import ru.mami.schedule.R;
 import ru.mami.schedule.adapters.ScheduleUpdateListAdapter;
-import ru.mami.schedule.adapters.SubjectAdapter;
+import ru.mami.schedule.adapters.DatabaseAdapter;
 import ru.mami.schedule.utils.Subject;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -18,7 +18,7 @@ import android.widget.ListView;
 public class UpdateListTabFragment extends Fragment implements OnClickListener {
     private ListView listView;
 
-    private SubjectAdapter subjectAdapter;
+    private DatabaseAdapter databaseAdapter;
     private ScheduleUpdateListAdapter updateListAdapter;
 
     private ArrayList<Subject> subjects;
@@ -26,8 +26,8 @@ public class UpdateListTabFragment extends Fragment implements OnClickListener {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        subjectAdapter = new SubjectAdapter(getActivity());
-        subjects =  subjectAdapter.getNewSubjects();
+        databaseAdapter = DatabaseAdapter.getInstance(getActivity());
+        subjects =  databaseAdapter.getNewSubjects();
         updateListAdapter = new ScheduleUpdateListAdapter(getActivity(), subjects);
     }
 

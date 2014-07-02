@@ -55,7 +55,7 @@ public class MenuSettingsActivity extends Activity implements OnClickListener {
         int count = 0;
 
         mSharedPreferences = getSharedPreferences(
-                StringConstants.SCHEDULE_SHARED_PREFERENCES, MODE_PRIVATE);
+                StringConstants.USER_INFO_PREFERENCE, MODE_PRIVATE);
 
         getCalendars();
 
