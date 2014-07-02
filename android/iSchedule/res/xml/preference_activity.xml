@@ -11,6 +11,10 @@
             android:key="@string/pref_address_port_id"
             android:summary="@string/pref_address_port_summary"
             android:title="@string/pref_address_port_title" />
+    </PreferenceCategory>
+    
+    <PreferenceCategory 
+        android:title="@string/pref_update_category_title">
         <CheckBoxPreference 
             android:key="@string/pref_check_updates_id"
             android:summary="@string/pref_check_updates_summary"
