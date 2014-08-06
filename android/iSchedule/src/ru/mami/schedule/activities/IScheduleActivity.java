@@ -23,6 +23,7 @@ import ru.mami.schedule.R;
 import ru.mami.schedule.adapters.UserAdapter;
 import ru.mami.schedule.utils.RequestStringsCreater;
 import ru.mami.schedule.utils.StringConstants;
+import ru.mami.schedule.utils.UpdateServiceManager;
 import ru.mami.schedule.utils.XMLParser;
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -103,6 +104,9 @@ public class IScheduleActivity extends Activity implements OnClickListener {
 
     private void startMainTabActivity() {
         Log.i(getClass().getSimpleName(), "Starting MainTabActivity");
+        ////////
+        UpdateServiceManager.getInstance().startService();
+        ////////
         startActivity(new Intent(this, MainTabActivity.class));
         finish();
     }
@@ -129,12 +133,12 @@ public class IScheduleActivity extends Activity implements OnClickListener {
     private class PostRequestAuthManager extends
             AsyncTask<Void, Void, HttpResponse> {
 
-        private String login;
-        private String pass;
+        private final String login;
+        private final String pass;
         private String token;
         private ProgressDialog progressDialog;
         
-        private int connectionTimeout = 3000; // in milliseconds
+        private final int connectionTimeout = 3000; // in milliseconds
 
         public PostRequestAuthManager(String login, String pass) {
             this.login = login;
@@ -236,7 +240,6 @@ public class IScheduleActivity extends Activity implements OnClickListener {
                 Toast.makeText(IScheduleActivity.this,
                         "Не получилось соединиться с серверoм.",
                         Toast.LENGTH_LONG).show();
-                startMainTabActivity();
             }
             progressDialog.dismiss();
         }
@@ -244,7 +247,7 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         private void saveSessionData() {
             Editor editor = sharedPreferences.edit();
             editor.putString(StringConstants.USER_TOKEN, this.token);
-            editor.commit();
+            editor.apply();
         }
 
     }

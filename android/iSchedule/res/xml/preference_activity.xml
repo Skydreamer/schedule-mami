@@ -23,7 +23,10 @@
             android:dependency="@string/pref_check_updates_id"
             android:key="@string/pref_update_delay_id"
             android:summary="@string/pref_update_delay_summary"
-            android:title="@string/pref_update_delay_title"/>
+            android:title="@string/pref_update_delay_title"
+            android:entries="@array/update_delay_entries"
+            android:entryValues="@array/update_delay_values"
+            android:defaultValue="600"/>
     </PreferenceCategory>
     
     <PreferenceCategory 

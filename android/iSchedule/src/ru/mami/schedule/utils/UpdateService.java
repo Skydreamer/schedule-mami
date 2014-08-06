@@ -84,7 +84,7 @@ public class UpdateService extends Service {
                 Log.i(getClass().getSimpleName(), "Not starting AsyncUpdater (network unavailable)");
         else
             Log.i(getClass().getSimpleName(), "No token - exit service");
-        return Service.START_STICKY;
+        return Service.START_NOT_STICKY;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class UpdateService extends Service {
     }
     
     public void notifyUser() {
-        int notificationID = 001;
+        int notificationID = 1;
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this);
         notificationBuilder.setSmallIcon(R.drawable.ic_launcher);
         notificationBuilder.setContentTitle("Доступно обновление");
@@ -187,7 +187,7 @@ public class UpdateService extends Service {
             databaseAdapter.syncDB(subjects);
 
             editor.putString(StringConstants.USER_LAST_SYNC_DATE, sdf.format(calend.getTime()));
-            editor.commit();
+            editor.apply();
             stopSelf();
         }
 
@@ -237,7 +237,8 @@ public class UpdateService extends Service {
                 e.printStackTrace();
             }
             finally {
-                is.close();
+                if (is != null)
+                    is.close();
             }
             return subjects;
         }

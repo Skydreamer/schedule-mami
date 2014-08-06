@@ -63,6 +63,26 @@
     <string name="autorising">Авторизация</string>
     <string name="login">Логин</string>
     <string name="password">Пароль</string>
+    
+    <string-array name="update_delay_entries">
+        <item>10 секунд</item>
+        <item>1 минута</item>
+        <item>10 минут</item>
+        <item>30 минут</item>
+        <item>1 час</item>
+        <item>6 часов</item>
+        <item>12 часов</item>
+    </string-array>
+
+    <string-array name="update_delay_values">
+        <item>10</item>
+        <item>60</item>
+        <item>600</item>
+        <item>1800</item>
+        <item>3600</item>
+        <item>21600</item>
+        <item>43200</item>
+    </string-array>
 
     <!-- Названия и описание настроек -->
     <string name="pref_server_category_title">Настройки сервера</string>

@@ -34,13 +34,13 @@ public class MenuSettingsActivity extends Activity implements OnClickListener {
     private String port;
     private boolean isChecked;
     private String calendarName;
-    private static Map<String, Long> calendars = new HashMap<String, Long>();
-    SharedPreferences mSharedPreferences;
-    static EditText hostText;
-    static EditText portText;
-    static CheckBox checkBox;
-    static Spinner spinner;
-    Button saveButton;
+    private static final Map<String, Long> calendars = new HashMap<String, Long>();
+    private SharedPreferences mSharedPreferences;
+    private static EditText hostText;
+    private static EditText portText;
+    private static CheckBox checkBox;
+    private static Spinner spinner;
+    private Button saveButton;
 
     @Override
     public void onClick(View arg0) {
@@ -104,7 +104,7 @@ public class MenuSettingsActivity extends Activity implements OnClickListener {
                 editor.putString("calendarName", spinner.getSelectedItem().toString());
                 editor.putLong("calendarID", calendars.get(spinner.getSelectedItem().toString()));
 
-                editor.commit();
+                editor.apply();
                 finish();
             }
         });
@@ -129,13 +129,13 @@ public class MenuSettingsActivity extends Activity implements OnClickListener {
     }
 
     private Map<String, Long> getCalendars() {
-        Cursor cur = null;
+        Cursor cur;
         String accountName = getAccountName();
         ContentResolver cr = getContentResolver();
 
         Editor editor = mSharedPreferences.edit();
         editor.putString("accountName", accountName);
-        editor.commit();
+        editor.apply();
 
         String[] eventProjection = new String[] {
                 Calendars._ID,

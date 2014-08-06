@@ -17,7 +17,8 @@
 
     <application
         android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name" >
+        android:label="@string/app_name"
+        android:name="ru.mami.schedule.utils.MobileApplication" >
         <activity
             android:name="ru.mami.schedule.activities.IScheduleActivity"
             android:label="@string/app_name"

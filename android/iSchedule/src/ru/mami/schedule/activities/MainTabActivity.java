@@ -1,23 +1,11 @@
 package ru.mami.schedule.activities;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-
-import ru.mami.schedule.R;
-import ru.mami.schedule.adapters.DatabaseAdapter;
-import ru.mami.schedule.adapters.TabCollectionPagerAdapter;
-import ru.mami.schedule.utils.CalendarManager;
-import ru.mami.schedule.utils.StringConstants;
-import ru.mami.schedule.utils.Subject;
-import ru.mami.schedule.utils.UpdateService;
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.ActionBar.TabListener;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -34,17 +22,26 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
+import ru.mami.schedule.R;
+import ru.mami.schedule.adapters.DatabaseAdapter;
+import ru.mami.schedule.adapters.TabCollectionPagerAdapter;
+import ru.mami.schedule.utils.CalendarManager;
+import ru.mami.schedule.utils.StringConstants;
+import ru.mami.schedule.utils.Subject;
+import ru.mami.schedule.utils.UpdateServiceManager;
+
 public class MainTabActivity extends FragmentActivity implements
         OnPageChangeListener, TabListener {
     private TabCollectionPagerAdapter collectionPagerAdapter;
     private ExitDialogFragment exitDialogFragment;
     private SharedPreferences sharedPreferences;
 
-    private PendingIntent updateServiceIntent;
-    private AlarmManager alarmManager;
 
-    TextView lastSyncTV;
-    ViewPager tabPager;
+
+    private TextView lastSyncTV;
+    private ViewPager tabPager;
 
     private static final Uri EVENT_URI = CalendarContract.Events.CONTENT_URI;
     private static final String ACCOUNT_NAME = "buyvich@gmail.com";
@@ -53,7 +50,6 @@ public class MainTabActivity extends FragmentActivity implements
         super.onCreate(savedInstanceState);
         Log.i(getClass().getSimpleName(), "MainTabActivity created");
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        Log.i(getClass().getSimpleName(), "DefaultSharedPreference: " + sharedPreferences.getAll().toString());
         setContentView(R.layout.main_tab_layout);
         lastSyncTV = (TextView) findViewById(R.id.maintab_last_sync);
         tabPager = (ViewPager) findViewById(R.id.tabPager);
@@ -89,35 +85,15 @@ public class MainTabActivity extends FragmentActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        Log.i(getClass().getSimpleName(), "MainTabActivity onResume");
         String lastSync = sharedPreferences.getString(
                 StringConstants.USER_LAST_SYNC_DATE, "-");
         lastSyncTV.setText(lastSync);
-        startUpdateService();
-    }
-
-    private void startUpdateService() {
-        Calendar calendar = Calendar.getInstance();
-        Intent serviceIntent = new Intent(this, UpdateService.class);
-        updateServiceIntent = PendingIntent.getService(this, 0, serviceIntent,
-                0);
-
-        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
-                calendar.getTimeInMillis(), 10 * 1000, updateServiceIntent);
-    }
-
-    private void cancelUpdateService() {
-        updateServiceIntent.cancel();
-        alarmManager.cancel(updateServiceIntent);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        Log.i(getClass().getSimpleName(), "MainTabActivity onPause");
-        Log.i(getClass().getSimpleName(), "Cancel UpdateService repeting");
-        cancelUpdateService();
+    protected void onStop() {
+        super.onStop();
+        UpdateServiceManager.getInstance().stopService();
     }
 
     @Override
@@ -208,8 +184,8 @@ public class MainTabActivity extends FragmentActivity implements
 
 class ExitDialogFragment extends android.support.v4.app.DialogFragment
         implements DialogInterface.OnClickListener {
-    private String question;
-    private Activity activity;
+    private final String question;
+    private final Activity activity;
 
     public ExitDialogFragment(String question, Activity activity) {
         this.question = question;
@@ -244,7 +220,7 @@ class ExitDialogFragment extends android.support.v4.app.DialogFragment
                         .edit();
                 preferenceEditor.remove(StringConstants.USER_TOKEN);
                 preferenceEditor.remove(StringConstants.USER_LAST_SYNC_DATE);
-                preferenceEditor.commit();
+                preferenceEditor.apply();
 
                 // ??? ???
                 SharedPreferences schedule = activity.getSharedPreferences(
@@ -253,7 +229,7 @@ class ExitDialogFragment extends android.support.v4.app.DialogFragment
                 for (String key : sharedPreferences.getAll().keySet()) {
                     preferenceEditor.remove(key);
                 }
-                preferenceEditor.commit();
+                preferenceEditor.apply();
 
                 startActivity(new Intent(activity, IScheduleActivity.class));
                 activity.finish();
