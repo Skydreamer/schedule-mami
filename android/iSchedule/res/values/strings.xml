@@ -86,7 +86,7 @@
 
     <!-- Названия и описание настроек -->
     <string name="pref_server_category_title">Настройки сервера</string>
-    <string name="pref_update_category_title">Настройки синхронизации</string>
+    <string name="pref_update_category_title">Настройки обновлений</string>
     <string name="pref_sync_category_title">Настройки синхронизации</string>
 
     <string name="pref_address_host_title">Хост</string>
