@@ -133,7 +133,8 @@ public class AppPreferenceFragment extends PreferenceFragment implements OnShare
     public void performChanges() {
         Log.i(getClass().getSimpleName(), "Perform changes");
 
-        UpdateServiceManager.getInstance().updateDelay(Integer.parseInt(updateDelayValue));
+        UpdateServiceManager.getInstance().setUpdateDelay(Integer.parseInt(updateDelayValue));
+        UpdateServiceManager.getInstance().setUpdateDelay(Integer.parseInt(updateDelayValue));
 
         if (checkUpdatesValue)
             UpdateServiceManager.getInstance().startService();
