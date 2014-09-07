@@ -61,7 +61,7 @@ public class IScheduleActivity extends Activity implements OnClickListener {
         if (sharedPreferences.getString(StringConstants.USER_TOKEN, null) == null) {
             setContentView(R.layout.auth_layout);
         } else {
-            Log.i(getClass().getSimpleName(), "Load user info from preferences");
+            Log.i(getClass().getSimpleName(), "Load user info from preferences (token is found)");
             startMainTabActivity();
         }
     }
