@@ -49,13 +49,10 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 public class UpdateService extends Service {
     public final IBinder binder = new MyBinder();
-    
-    private int activeNetworkType;
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -254,35 +251,10 @@ public class UpdateService extends Service {
     }
 
     private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = 
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        TelephonyManager telephonyManager =
-                (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        ConnectivityManager connectivityManager
+              = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        
-        switch(activeNetworkInfo.getType()) {
-            case (ConnectivityManager.TYPE_WIFI):
-                Log.i(getClass().getSimpleName(), "Network type - Wi-Fi");
-                activeNetworkType = ConnectivityManager.TYPE_WIFI;
-                break;
-            case (ConnectivityManager.TYPE_MOBILE):
-                switch(telephonyManager.getNetworkType()) {
-                    case (TelephonyManager.NETWORK_TYPE_LTE):
-                        Log.i(getClass().getSimpleName(), "Network type - LTE");
-                        activeNetworkType = TelephonyManager.NETWORK_TYPE_LTE;
-                        break;
-                    case (TelephonyManager.NETWORK_TYPE_EDGE):
-                        Log.i(getClass().getSimpleName(), "Network type - EDGE");
-                        activeNetworkType = TelephonyManager.NETWORK_TYPE_EDGE;
-                        break;
-                    case (TelephonyManager.NETWORK_TYPE_GPRS):
-                        Log.i(getClass().getSimpleName(), "Network type - GPRS");
-                        activeNetworkType = TelephonyManager.NETWORK_TYPE_GPRS;
-                        break;
-                }
-        }
-        
-        return (activeNetworkInfo != null && activeNetworkInfo.isConnected());
+        return activeNetworkInfo != null;
     }
 
 }

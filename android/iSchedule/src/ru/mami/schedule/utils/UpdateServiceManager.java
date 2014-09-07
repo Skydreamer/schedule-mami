@@ -25,7 +25,7 @@ public class UpdateServiceManager {
     private int delay = Integer.parseInt(sharedPreference.getString(context.getString(R.string.pref_update_delay_id), "10"));
 
     private UpdateServiceManager() {
-        currentState = UpdateServiceManagerState.WAIT;
+
     }
 
     public static UpdateServiceManager getInstance() {
@@ -34,7 +34,7 @@ public class UpdateServiceManager {
         return instance;
     }
 
-    public void setUpdateDelay(int value) {
+    public void updateDelay(int value) {
         Log.i(getClass().getSimpleName(), "Set up new delay time: " + value);
         delay = value;
         stopService();
@@ -53,9 +53,7 @@ public class UpdateServiceManager {
                 0);
 
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        // _WAKEUP заставляет работать при выключенном экране, иначе запросы выполняются при включении экрана
-        // +76 к экономии энергии
-        alarmManager.setInexactRepeating(AlarmManager.RTC, 
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
                 calendar.getTimeInMillis(), delay * 1000, updateServiceIntent);
     }
 

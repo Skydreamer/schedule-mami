@@ -1,15 +1,5 @@
 package ru.mami.schedule.activities;
 
-import java.util.ArrayList;
-
-import ru.mami.schedule.R;
-import ru.mami.schedule.adapters.DatabaseAdapter;
-import ru.mami.schedule.adapters.TabCollectionPagerAdapter;
-import ru.mami.schedule.utils.CalendarManager;
-import ru.mami.schedule.utils.StringConstants;
-import ru.mami.schedule.utils.Subject;
-import ru.mami.schedule.utils.UpdateServiceManager;
-
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.ActionBar.TabListener;
@@ -47,6 +37,8 @@ public class MainTabActivity extends FragmentActivity implements
     private TabCollectionPagerAdapter collectionPagerAdapter;
     private ExitDialogFragment exitDialogFragment;
     private SharedPreferences sharedPreferences;
+
+
 
     private TextView lastSyncTV;
     private ViewPager tabPager;
@@ -101,8 +93,6 @@ public class MainTabActivity extends FragmentActivity implements
     @Override
     protected void onStop() {
         super.onStop();
-        Log.i(getClass().getSimpleName(), "onStop()");
-        // TODO 
         UpdateServiceManager.getInstance().stopService();
     }
 

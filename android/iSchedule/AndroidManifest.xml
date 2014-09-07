@@ -40,17 +40,10 @@
             android:theme="@android:style/Theme.Holo.Light" />
 
         <service
-            android:name="ru.mami.schedule.utils.UpdateService"
+            android:name=".utils.UpdateService"
             android:enabled="true"
             android:label="UpdateService" >
         </service>
-        
-        <receiver android:name="ru.mami.schedule.utils.BootActionReceiver"
-        	android:enabled="true">
-    		<intent-filter>
-        		<action android:name="android.intent.action.BOOT_COMPLETED"></action>
-    		</intent-filter>
-		</receiver>
 
     </application>
 
